@@ -1,0 +1,34 @@
+{
+    "name": "li-bao-jia/miniprogram-ci-service-php-sdk",
+    "description": "miniprogram-ci-service 的 PHP SDK，便于在 PHP 系统中快速集成 miniprogram-ci-service 实现微信小程序上传、预览、……、成员管理等服务",
+    "type": "library",
+    "license": "MIT",
+    "keywords": [
+        "miniprogram",
+        "wechat",
+        "sdk",
+        "php"
+    ],
+    "homepage": "https://github.com/li-bao-jia/miniprogram-ci-service-php-sdk",
+    "autoload": {
+        "psr-4": {
+            "LiBaoJia\\MiniprogramCiServicePhpSdk\\": "src/"
+        }
+    },
+    "authors": [
+        {
+            "name": "BaoJia Li",
+            "email": "livsyitian@163.com"
+        }
+    ],
+    "require": {
+        "php": ">=7.4",
+        "guzzlehttp/guzzle": "^7.0"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^9.6"
+    },
+    "scripts": {
+        "test": "phpunit"
+    }
+}
