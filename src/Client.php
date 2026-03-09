@@ -37,41 +37,21 @@ class Client
 
     private function post(string $path, array $payload): array
     {
-        $attempt = 0;
-        $maxAttempt = $this->config->getRetryTimes() + 1;
-        $lastException = null;
-
-        while ($attempt < $maxAttempt) {
-            $attempt++;
-
-            try {
-                $response = $this->httpClient->request('POST', ltrim($path, '/'), [
-                    'headers' => $this->buildHeaders(),
-                    'json' => $payload,
-                ]);
-
-                return $this->parseResponse($response);
-            } catch (GuzzleException $e) {
-                $lastException = $e;
-                if ($attempt >= $maxAttempt) {
-                    break;
-                }
-                $this->sleepForRetry();
-            } catch (ApiException $e) {
-                $lastException = $e;
-                if ($attempt >= $maxAttempt || !$this->shouldRetryApiException($e)) {
-                    throw $e;
-                }
-                $this->sleepForRetry();
-            }
+        try {
+            $response = $this->httpClient->request('POST', ltrim($path, '/'), [
+                'headers' => $this->buildHeaders(),
+                'json' => $payload,
+            ]);
+        } catch (GuzzleException $e) {
+            throw new ApiException(
+                'HTTP request failed: ' . $e->getMessage(),
+                0,
+                [],
+                $e
+            );
         }
 
-        throw new ApiException(
-            'Request failed after retries: ' . ($lastException ? $lastException->getMessage() : 'unknown error'),
-            0,
-            [],
-            $lastException
-        );
+        return $this->parseResponse($response);
     }
 
     private function parseResponse(ResponseInterface $response): array
@@ -126,43 +106,6 @@ class Client
         return false;
     }
 
-    private function shouldRetryApiException(ApiException $e): bool
-    {
-        $code = $e->getCode();
-        if ($code === 429 || $code >= 500) {
-            return true;
-        }
-
-        $response = $e->getResponseData();
-        $errCode = $this->extractErrorCode($response);
-        if ($errCode === null) {
-            return false;
-        }
-
-        return in_array($errCode, $this->config->getRetryableBizCodes(), true);
-    }
-
-    private function extractErrorCode(array $decoded): ?int
-    {
-        if (array_key_exists('errCode', $decoded) && is_numeric($decoded['errCode'])) {
-            return (int)$decoded['errCode'];
-        }
-        if (array_key_exists('code', $decoded) && is_numeric($decoded['code'])) {
-            return (int)$decoded['code'];
-        }
-        if (isset($decoded['data']) && is_array($decoded['data'])) {
-            $data = $decoded['data'];
-            if (array_key_exists('errCode', $data) && is_numeric($data['errCode'])) {
-                return (int)$data['errCode'];
-            }
-            if (array_key_exists('code', $data) && is_numeric($data['code'])) {
-                return (int)$data['code'];
-            }
-        }
-
-        return null;
-    }
-
     private function extractErrorMessage(array $decoded, string $fallback): string
     {
         $candidates = [
@@ -200,11 +143,4 @@ class Client
         return $headers;
     }
 
-    private function sleepForRetry(): void
-    {
-        $intervalMs = $this->config->getRetryIntervalMs();
-        if ($intervalMs > 0) {
-            usleep($intervalMs * 1000);
-        }
-    }
 }

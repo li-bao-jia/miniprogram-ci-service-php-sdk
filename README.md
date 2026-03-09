@@ -47,10 +47,7 @@ $config = new Config(
     'http://127.0.0.1:3000',
     '',      // token，可选
     60.0,    // timeout
-    10.0,    // connect timeout
-    1,       // retry times
-    300,     // retry interval ms
-    [-38]    // retryable business error codes（如微信“编译中”）
+    10.0     // connect timeout
 );
 
 $client = new Client($config);
@@ -88,7 +85,7 @@ try {
 
 SDK 在以下情况会抛出 `ApiException`：
 
-- 网络请求失败（含重试后失败）
+- 网络请求失败
 - HTTP 状态码非 2xx
 - 响应不是合法 JSON
 - 服务端返回 `state=false`
